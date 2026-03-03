@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Well Do You Know Me? 😏</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0d0d0d;
+    --card: #161616;
+    --border: #2a2a2a;
+    --yellow: #F5C518;
+    --orange: #FF6B35;
+    --green: #00E676;
+    --red: #FF3D71;
+    --blue: #4FC3F7;
+    --text: #f0f0f0;
+    --muted: #777;
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'Nunito', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* Glowing radial bg */
+  .bg-glow {
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 15%, rgba(245,197,24,0.06) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 80%, rgba(255,107,53,0.07) 0%, transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+    animation: slideDown 0.6s ease both;
+  }
+
+  .header .tag {
+    display: inline-block;
+    background: var(--yellow);
+    color: #000;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+
+  .header h1 {
+    font-family: 'Bebas Neue', cursive;
+    font-size: clamp(3rem, 10vw, 6rem);
+    line-height: 1;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #fff 0%, var(--yellow) 50%, var(--orange) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header p {
+    color: var(--muted);
+    font-size: 1rem;
+    margin-top: 10px;
+    font-weight: 600;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    margin-bottom: 28px;
+    animation: fadeIn 0.5s ease both;
+  }
+
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--muted);
+  }
+
+  .progress-meta .q-label { color: var(--yellow); }
+
+  .progress-track {
+    height: 8px;
+    background: var(--border);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, var(--yellow), var(--orange));
+    transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 12px rgba(245,197,24,0.5);
+    width: 0%;
+  }
+
+  /* Score chips (top right) */
+  .score-display {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+  }
+
+  .score-chip {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    transition: all 0.3s ease;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+  }
+
+  .score-chip.correct { background: var(--green); border-color: var(--green); }
+  .score-chip.wrong   { background: var(--red);   border-color: var(--red); }
+
+  /* Question card */
+  .q-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px 28px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+    animation: cardIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: scale(0.92) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .q-number {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 5rem;
+    color: rgba(255,255,255,0.03);
+    position: absolute;
+    top: -10px; right: 16px;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .q-text {
+    font-size: clamp(1.1rem, 3.5vw, 1.45rem);
+    font-weight: 800;
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+
+  .q-emoji {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 14px;
+  }
+
+  /* Options */
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  @media (max-width: 440px) {
+    .options { grid-template-columns: 1fr; }
+  }
+
+  .opt-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    line-height: 1.3;
+  }
+
+  .opt-btn:hover:not(:disabled) {
+    border-color: var(--yellow);
+    background: rgba(245,197,24,0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245,197,24,0.12);
+  }
+
+  .opt-btn:disabled { cursor: default; }
+
+  .opt-btn.correct-ans {
+    border-color: var(--green);
+    background: rgba(0,230,118,0.12);
+    color: var(--green);
+    transform: scale(1.03);
+  }
+
+  .opt-btn.wrong-ans {
+    border-color: var(--red);
+    background: rgba(255,61,113,0.1);
+    color: var(--red);
+  }
+
+  .opt-btn.dimmed {
+    opacity: 0.35;
+  }
+
+  /* Feedback bubble */
+  .feedback {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    display: none;
+    animation: pop 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  .feedback.show { display: block; }
+
+  .feedback.correct-fb {
+    background: rgba(0,230,118,0.1);
+    border: 1px solid var(--green);
+    color: var(--green);
+  }
+
+  .feedback.wrong-fb {
+    background: rgba(255,61,113,0.1);
+    border: 1px solid var(--red);
+    color: var(--red);
+  }
+
+  @keyframes pop {
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  /* Next button */
+  .next-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--yellow), var(--orange));
+    color: #000;
+    border: none;
+    border-radius: 14px;
+    padding: 16px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 12px;
+    display: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 6px 24px rgba(245,197,24,0.25);
+    letter-spacing: 0.5px;
+  }
+
+  .next-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(245,197,24,0.4);
+  }
+
+  .next-btn.show { display: block; animation: fadeIn 0.4s ease both; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+
+  /* Result screen */
+  #result-screen {
+    display: none;
+    text-align: center;
+    animation: cardIn 0.6s ease both;
+  }
+
+  #result-screen.show { display: block; }
+
+  .result-emoji {
+    font-size: 5rem;
+    display: block;
+    margin-bottom: 16px;
+    animation: bounce 1.5s ease-in-out infinite;
+  }
+
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-16px); }
+  }
+
+  .result-title {
+    font-family: 'Bebas Neue', cursive;
+    font-size: clamp(2.5rem, 9vw, 5rem);
+    letter-spacing: 2px;
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+
+  .result-title.win {
+    background: linear-gradient(135deg, var(--yellow), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .result-title.lose {
+    background: linear-gradient(135deg, var(--red), var(--orange));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .result-score-ring {
+    width: 130px; height: 130px;
+    border-radius: 50%;
+    border: 4px solid var(--border);
+    margin: 24px auto;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative;
+    background: var(--card);
+  }
+
+  .result-score-ring svg {
+    position: absolute;
+    inset: -4px;
+    width: calc(100% + 8px);
+    height: calc(100% + 8px);
+    transform: rotate(-90deg);
+  }
+
+  .result-score-ring circle {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+
+  .ring-bg { stroke: var(--border); }
+  .ring-fill { stroke: var(--yellow); transition: stroke-dashoffset 1.2s cubic-bezier(0.34, 1.1, 0.64, 1); }
+
+  .score-num {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2.6rem;
+    line-height: 1;
+    color: var(--yellow);
+  }
+
+  .score-label { font-size: 0.75rem; color: var(--muted); font-weight: 700; }
+
+  .result-msg {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.8);
+    margin: 16px 0 24px;
+  }
+
+  .replay-btn {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 30px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    font-size: 0.95rem;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .replay-btn:hover {
+    border-color: var(--yellow);
+    color: var(--yellow);
+    transform: scale(1.04);
+  }
+
+  /* Confetti canvas */
+  #confetti {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+  }
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<canvas id="confetti"></canvas>
+
+<div class="wrapper">
+  <div class="header">
+    <h1>How Well Do<br>You Know Me?</h1>
+    <p>10 questions. No mercy. Good luck, Bro. 😏</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progress-wrap">
+    <div class="progress-meta">
+      <span class="q-label" id="q-label">Question 1 of 10</span>
+      <span id="score-label">Score: 0</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- Score chips -->
+  <div class="score-display" id="score-chips"></div>
+
+  <!-- Quiz area -->
+  <div id="quiz-area">
+    <div class="q-card" id="q-card">
+      <div class="q-number" id="q-num">1</div>
+      <span class="q-emoji" id="q-emoji"></span>
+      <div class="q-text" id="q-text"></div>
+      <div class="options" id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      
+    </div>
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next Question →</button>
+  </div>
+
+  <!-- Result -->
+  <div id="result-screen">
+  <span class="result-emoji" id="result-emoji">🎁</span>
+  <div class="result-title win" id="result-title">HAPPY BELATED BIRTHDAY!</div>
+  <div class="result-score-ring">
+    <svg viewBox="0 0 138 138">
+      <circle class="ring-bg" cx="69" cy="69" r="62"/>
+      <circle class="ring-fill" id="ring-fill" cx="69" cy="69" r="62"
+        stroke-dasharray="389.6" stroke-dashoffset="389.6"/>
+    </svg>
+    <span class="score-num" id="final-score-num">0</span>
+    <span class="score-label">out of 10</span>
+  </div>
+  <div class="result-msg" id="result-msg">
+    </div>
+  <button class="replay-btn" onclick="restartQuiz()">🔄 Play Again (Or just go buy the food)</button>
+</div>
+
+<script>
+const questions = [
+  {
+    emoji: "🧠",
+    text: "Who is the smarter sibling?",
+    options: ["Obviously me 😌", "Bro, definitely", "We're equally gifted 😇", "sister!!!"],
+    correct: 0,
+    correctMsg: "✅ Correct! Self-awareness is the first sign of intelligence. 😂",
+    wrongMsg: "❌ Bold of you to pick wrong! The answer is... ME. 😤",
+  
+  },
+{
+  emoji: "🙈",
+  text: "Who played hide and seek and accidentally fell asleep during the game? 😴",
+  options: [
+       "Me 🤭",
+    "Brother… even now you goes missing sometimes 😂",
+ 
+    "Both of us teamed up",
+    "Along with sister"
+  ],
+  correct: 1,
+  correctMsg: "✅ Correct! Mom searched the whole house calling his name… and he was peacefully sleeping in his hiding spot. 😂😴",
+  wrongMsg: "❌ Nope! Only one person could turn hide & seek into nap time. 🛌🤣",
+ 
+},
+  {
+    emoji: "⚔️",
+    text: "Who starts most of our fights?",
+    options: ["Me 😈 && sis", "Bro 100%", "It's a 50/50 war", "Mom starts them all"],
+    correct: 2,
+    correctMsg: "✅ Correct! It takes two warriors to create a proper sibling battle. 🤝",
+    wrongMsg: "❌ WRONG. It's always both of us. We're equally chaotic. 😂",
+    
+  },
+  {
+    emoji: "📱",
+    text: "Who is always on their phone during family dinners?",
+    options: ["Me, obviously", "Bro disappears into the screen", "Both of us 🤳", "We took a vow of phone silence... once"],
+    correct: 1,
+    correctMsg: "✅ Correct! Bro is basically in a long-term relationship with his phone. 📱❤️",
+    wrongMsg: "❌ Nope! Nice try, but we all know who's glued to the screen. 📱👀",
+    
+  },
+ {
+    emoji: "🤲",
+    text: "Who says 'InshaAllah' and then never gets it done?",
+    options: ["Me — I mean it sincerely 😇", "It's just a motivational phrase", "Bro 👀", "We both say it strategically"],
+    correct: 2,
+    correctMsg: "✅ Correct! Bro says 'InshaAllah'… and the task enters another dimension. 😂",
+    wrongMsg: "❌ Be honest. We’re still waiting on that thing from 2022. 🤲😭",
+   
+},
+  {
+    emoji: "😴",
+    text: "Who sleeps the longest on weekends?",
+    options: ["Me, I deserve it 💤", "Bro hibernates till noon", "We sleep in sync", "Neither — we're productive"],
+    correct: 0,
+    correctMsg: "✅ Correct! My sleep schedule is a lifestyle choice. 😴",
+    wrongMsg: "❌ Wrong! Even the walls know the truth. 🧱😂",
+ 
+  },
+ {
+  emoji: "🎂",
+  text: "Who forgot whose birthday it was? (Be honest.)",
+  options: ["I would NEVER 😇", "Bro forgot it", "We both know who did it 👀", "The calendar betrayed us"],
+  correct: 0,
+  correctMsg: "✅ Correct! Yes… it was me. I said 'I’ll remember this year'… and then completely forgot. 😂🎉",
+  wrongMsg: "❌ Nope! The late wish speech already gave it away. 😌📅",
+  
+},
+{
+    emoji: "👗",
+    text: "Who takes longer to get ready?",
+    options: ["Me — excellence takes time", "We're equally dramatic 💅",  "Bro, because he STARTS after we're ready","We teleport fully dressed"],
+    correct: 2,
+    correctMsg: "✅ Correct! Bro waits till we're ready… then says 'Okay I'm starting now.' 😭⏰",
+    wrongMsg: "❌ Nice try. The timeline clearly shows we were ready at 1:00… he entered the bathroom at 1:01. 😂",
+   
+},
+  {
+    emoji: "🤣",
+    text: "Who has the better sense of humor?",
+    options: ["Me — I made this quiz 😏", "Bro is actually hilarious", "We're both comedians", "The dog is funnier than both of us"],
+    correct: 0,
+    correctMsg: "✅ Correct! Exhibit A: this entire quiz. Rest my case. 😏",
+    wrongMsg: "❌ I made this quiz. QED. Winner = Me. 🏆",
+    
+  },
+  {
+    emoji: "❤️",
+    text: "Who loves the other more?",
+    options: ["Obviously me! 💛", "Bro would do anything for me", "It's mutual and beautiful 🥹", "We'd never admit it out loud"],
+    correct: 3,
+    correctMsg: "✅ Correct! We'd rather fight than say 'I love you' and that's the sibling code. 🤝❤️",
+    wrongMsg: "❌ You know neither of us says it out loud. That's just how we love. 😅",
+   
+  }
+];
+
+let current = 0;
+let score = 0;
+let answered = false;
+const chips = [];
+
+function initChips() {
+  const el = document.getElementById('score-chips');
+  el.innerHTML = '';
+  for (let i = 0; i < questions.length; i++) {
+    const c = document.createElement('div');
+    c.className = 'score-chip';
+    c.id = 'chip-' + i;
+    el.appendChild(c);
+    chips.push(c);
+  }
+}
+
+function loadQuestion(idx) {
+  answered = false;
+  const q = questions[idx];
+  const card = document.getElementById('q-card');
+
+  // reset card animation
+  card.style.animation = 'none';
+  card.offsetHeight;
+  card.style.animation = '';
+
+  document.getElementById('q-num').textContent = idx + 1;
+  document.getElementById('q-emoji').textContent = q.emoji;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('q-label').textContent = `Question ${idx + 1} of ${questions.length}`;
+  document.getElementById('score-label').textContent = `Score: ${score}`;
+  document.getElementById('progress-fill').style.width = `${(idx / questions.length) * 100}%`;
+
+ 
+
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.textContent = '';
+
+  document.getElementById('next-btn').className = 'next-btn';
+
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = opt;
+    btn.onclick = () => selectAnswer(i);
+    opts.appendChild(btn);
+  });
+}
+
+function selectAnswer(chosen) {
+  if (answered) return;
+  answered = true;
+
+  const q = questions[current];
+  const isCorrect = chosen === q.correct;
+  if (isCorrect) score++;
+
+  // Update chip
+  const chip = document.getElementById('chip-' + current);
+  chip.className = 'score-chip ' + (isCorrect ? 'correct' : 'wrong');
+  chip.textContent = isCorrect ? '✓' : '✗';
+
+  // Style buttons
+  const btns = document.querySelectorAll('.opt-btn');
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correct) btn.classList.add('correct-ans');
+    else if (i === chosen) btn.classList.add('wrong-ans');
+    else btn.classList.add('dimmed');
+  });
+
+  // Feedback
+  const fb = document.getElementById('feedback');
+  fb.textContent = isCorrect ? q.correctMsg : q.wrongMsg;
+  fb.className = 'feedback show ' + (isCorrect ? 'correct-fb' : 'wrong-fb');
+
+  // GIF
+
+  // Next button
+  const nextLabel = current < questions.length - 1 ? 'Next Question →' : 'See My Results 🎉';
+  const nb = document.getElementById('next-btn');
+  nb.textContent = nextLabel;
+  nb.className = 'next-btn show';
+
+  document.getElementById('score-label').textContent = `Score: ${score}`;
+}
+
+function nextQuestion() {
+  current++;
+  if (current < questions.length) {
+    loadQuestion(current);
+  } else {
+    showResult();
+  }
+}
+
+function showResult() {
+  document.getElementById('quiz-area').style.display = 'none';
+  document.getElementById('progress-wrap').style.display = 'none';
+
+  const rs = document.getElementById('result-screen');
+  rs.className = 'show';
+
+  // We are forcing the "Win" state regardless of score because it's a birthday card!
+  document.getElementById('result-emoji').textContent = '🍕';
+  const title = document.getElementById('result-title');
+  title.textContent = "YOU WIN! (NOW FEED US)";
+  title.className = 'result-title win';
+
+  document.getElementById('final-score-num').textContent = score;
+
+  // The customized funny message from you and your sister
+  const funnyMessage = `
+    🎉 Happy Birthday, Bro! 🎂 <br><br>
+    So... about that birthday wish. We aren't late, we're just extending the celebration! 🏃‍♀️💨 <br><br>
+    Since you're the "best" brother (according to this quiz we totally didn't rig), your prize is 
+    <strong>Treating Us to Dinner Tonight!</strong> 🍕🍔 <br><br>
+    We’re ready when you are. Don't check your bank account, just check your heart. ❤️
+  `;
+  
+  document.getElementById('result-msg').innerHTML = funnyMessage;
+
+  // Animate ring to green because he "wins" the treat
+  const circumference = 389.6;
+  const offset = circumference - (score / 10) * circumference;
+  setTimeout(() => {
+    document.getElementById('ring-fill').style.strokeDashoffset = offset;
+    document.getElementById('ring-fill').style.stroke = '#00E676';
+  }, 300);
+
+  // Always launch confetti because it's a celebration
+  launchConfetti();
+}
+
+function restartQuiz() {
+  current = 0;
+  score = 0;
+  answered = false;
+
+  document.getElementById('result-screen').className = '';
+  document.getElementById('quiz-area').style.display = 'block';
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('ring-fill').style.strokeDashoffset = 389.6;
+
+  chips.forEach(c => { c.className = 'score-chip'; c.textContent = ''; });
+  loadQuestion(0);
+}
+
+// Confetti
+function launchConfetti() {
+  const canvas = document.getElementById('confetti');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const colors = ['#F5C518','#FF6B35','#00E676','#4FC3F7','#FF3D71','#ffffff'];
+  let particles = Array.from({length: 180}, () => ({
+    x: Math.random() * canvas.width,
+    y: -20,
+    vx: (Math.random() - 0.5) * 5,
+    vy: 2 + Math.random() * 4,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    size: 6 + Math.random() * 9,
+    rot: Math.random() * 360,
+    rotv: (Math.random() - 0.5) * 7,
+    life: 1
+  }));
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      ctx.save();
+      ctx.globalAlpha = p.life;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      ctx.restore();
+      p.x += p.vx; p.y += p.vy; p.vy += 0.06;
+      p.rot += p.rotv;
+      if (p.y > canvas.height * 0.75) p.life -= 0.018;
+    });
+    particles = particles.filter(p => p.life > 0);
+    if (particles.length) requestAnimationFrame(draw);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  draw();
+}
+
+// Init
+initChips();
+loadQuestion(0);
+</script>
+</body>
+</html>
